@@ -1,0 +1,14 @@
+{
+  "name": "@newtonium/installer",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "run:core": "cd core && cargo run"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
