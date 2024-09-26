@@ -3,7 +3,9 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "run:core": "cd core && cargo run"
+    "run:core": "cd core && cargo run",
+    "run:view": "cd view && bun run dev",
+    "run": "bun run:core & bun run:view"
   },
   "devDependencies": {
     "@types/bun": "latest"
