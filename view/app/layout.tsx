@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Newtonium Installer",
 };
 
-export const font = Plus_Jakarta_Sans({
+const font = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 

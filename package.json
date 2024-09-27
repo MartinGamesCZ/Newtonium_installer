@@ -3,9 +3,12 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "run:core": "cd core && cargo run",
+    "run:core": "cd core && NEWTONIUM_DEV=true cargo run",
     "run:view": "cd view && bun run dev",
-    "run": "bun run:core & bun run:view"
+    "run": "bun run:core & bun run:view",
+    "build:core": "cd core && cargo build --release && cp ./target/release/newtonium_installer ../dist/",
+    "build:view": "cd view && bun run build && cp ./dist/* ../dist/installer_view -r",
+    "build": "rm -rf ./dist && mkdir -p ./dist && mkdir -p ./dist/installer_view && bun build:core && bun build:view"
   },
   "devDependencies": {
     "@types/bun": "latest"

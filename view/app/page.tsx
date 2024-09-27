@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import styles from "./page.module.scss";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ScreenRenderer, { Screen } from "./helpers/ScreenRenderer";
 
 const screens =
@@ -60,6 +60,42 @@ const screens =
             action: "$/install",
           },
         },
+        {
+          id: "error",
+          title: "Error",
+          type: "$/error",
+          back: {
+            disabled: true,
+          },
+          next: {
+            title: "Retry",
+            screen: "language",
+          },
+        },
+        {
+          id: "done",
+          title: "Done",
+          type: "$/done",
+          back: {
+            title: "Close",
+            action: "$/close",
+          },
+          next: {
+            title: "Launch app",
+            action: "$/launch",
+          },
+        },
+        {
+          id: "progress",
+          title: "Installing",
+          type: "$/progress",
+          back: {
+            disabled: true,
+          },
+          next: {
+            disabled: true,
+          },
+        },
       ];
 
 const $: {
@@ -67,7 +103,7 @@ const $: {
     [key: string]: Screen;
   };
   action: {
-    [key: string]: (state: any) => void;
+    [key: string]: (state: any, setScreen: any) => void;
   };
 } = {
   screen: {
@@ -83,7 +119,10 @@ const $: {
     location: {
       title: "Choose install location",
       type: "input",
-      default: "/usr/local/Newtonium",
+      default:
+        typeof window != "undefined"
+          ? (window as any).nai.default_location
+          : "/usr/local/MyNewtoniumApp",
       state_id: "location",
     },
     shortcut: {
@@ -100,10 +139,35 @@ const $: {
         `Location: ${state.location}\nShortcut: ${state.shortcut ? "Yes" : "No"}`,
       state_id: "details",
     },
+    error: {
+      title: "Error",
+      type: "text",
+      text: (state: any) => state.error,
+      state_id: "error",
+    },
+    done: {
+      title: "Done",
+      type: "text",
+      text: "Installation complete",
+      state_id: "done",
+    },
+    progress: {
+      title: "Installing",
+      type: "text",
+      text: "Please wait...",
+      state_id: "progress",
+    },
   },
   action: {
-    install: (state: any) => {
-      console.log("Installing", state);
+    install: (state: any, setScreen: any) => {
+      setScreen("progress");
+      (window as any).ipc.postMessage("install;" + JSON.stringify(state));
+    },
+    close: () => {
+      (window as any).ipc.postMessage("close;{}");
+    },
+    launch: (state: any, setScreen: any) => {
+      (window as any).ipc.postMessage("launch;" + JSON.stringify(state));
     },
   },
 };
@@ -115,14 +179,51 @@ export default function Page() {
   const screenDefinition = screens.find((s) => s.id == screen);
   const screenData = $.screen[screenDefinition.type.split("/")[1]];
 
+  useEffect(() => {
+    if (typeof window == "undefined") return;
+
+    (window as any).setStatus = (data: any) => {
+      switch (data.type) {
+        case "ok":
+          setScreen("done");
+          break;
+        case "err":
+          setScreen("error");
+          setState({ error: data.data });
+          break;
+        case "unknown":
+          setScreen("error");
+          setState({ error: "Unknown error\n" + data.data });
+          break;
+        case "progress":
+          setScreen("progress");
+          break;
+      }
+    };
+  }, []);
+
   return (
     <div className={styles.root}>
       <div className={styles.header}>
         <div>
-          <Image src="/icon.png" alt="logo" width={100} height={100} />
+          <Image
+            src={
+              "nai://" +
+              (typeof window != "undefined"
+                ? "nai_res" + (window as any).nai.icon
+                : "logo.png")
+            }
+            alt="logo"
+            width={100}
+            height={100}
+          />
         </div>
         <div>
-          <h1>Newtonium setup</h1>
+          <h1>
+            {typeof window != "undefined"
+              ? (window as any).nai.title
+              : "Newtonium setup"}
+          </h1>
         </div>
       </div>
       <div className={styles.body}>
@@ -133,27 +234,47 @@ export default function Page() {
           onClick={() => {
             if (screenDefinition.back && !screenDefinition.back.disabled) {
               if (screenDefinition.back.action) {
-                $.action[screenDefinition.back.action.split("/")[1]](state);
+                $.action[screenDefinition.back.action.split("/")[1]](
+                  state,
+                  setScreen,
+                );
               } else {
                 setScreen(screenDefinition.back.screen);
               }
             }
           }}
+          style={
+            screenDefinition.back && screenDefinition.back.disabled
+              ? { display: "none" }
+              : {}
+          }
         >
-          Back
+          {screenDefinition.back && screenDefinition.back.title
+            ? screenDefinition.back.title
+            : "Back"}
         </button>
         <button
           onClick={() => {
             if (screenDefinition.next && !screenDefinition.next.disabled) {
               if (screenDefinition.next.action) {
-                $.action[screenDefinition.next.action.split("/")[1]](state);
+                $.action[screenDefinition.next.action.split("/")[1]](
+                  state,
+                  setScreen,
+                );
               } else {
                 setScreen(screenDefinition.next.screen);
               }
             }
           }}
+          style={
+            screenDefinition.next && screenDefinition.next.disabled
+              ? { display: "none" }
+              : {}
+          }
         >
-          Next
+          {screenDefinition.next && screenDefinition.next.title
+            ? screenDefinition.next.title
+            : "Next"}
         </button>
       </div>
     </div>

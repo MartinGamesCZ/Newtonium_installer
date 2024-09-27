@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+karen = "0.1.2"
+mime_guess = "2.0.5"
+serde = "1.0.210"
+serde_json = "1.0.128"
 tao = "0.30.2"
+tokio = { version = "1.40.0", features = ["full"] }
 wry = "0.44.1"
